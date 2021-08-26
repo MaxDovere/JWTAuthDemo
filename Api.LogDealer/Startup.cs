@@ -1,21 +1,17 @@
-using JWTAuthDemo.Repository;
+using Api.LogDealer.AccountManager.JWTAuthManager;
+using Api.LogDealer.GeoManager;
+using Api.LogDealer.LogManager;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
-namespace JWTAuthDemo
+namespace Api.LogDealer
 {
     public class Startup
     {
@@ -32,10 +28,13 @@ namespace JWTAuthDemo
             
             services.AddSingleton<IJWTAuthManager, JWTAuthManager>();
 
+            services.AddTransient<ILogService, LogService>();
+            services.AddTransient<IGeoLocation, GeoLocation>();
+
             services.AddControllers();
             services.AddSwaggerGen(option =>
             {
-                option.SwaggerDoc("v1", new OpenApiInfo { Title = "JWTAuthDemo", Version = "v1" });
+                option.SwaggerDoc("v1", new OpenApiInfo { Title = "LogDealer", Version = "v1" });
                 option.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
                 {
                     Name = "Authorization",
@@ -63,18 +62,18 @@ namespace JWTAuthDemo
             });
 
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-           .AddJwtBearer(options =>
-           {
-               options.TokenValidationParameters = new TokenValidationParameters
+               .AddJwtBearer(options =>
                {
-                   ValidateIssuer = true,
-                   ValidateAudience = true,
-                   ValidateLifetime = true,
-                   ValidateIssuerSigningKey = true,
-                   ValidIssuer = Configuration["JwtAuth:Issuer"],
-                   ValidAudience = Configuration["JwtAuth:Issuer"],
-                   IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["JwtAuth:Key"]))
-               };
+                   options.TokenValidationParameters = new TokenValidationParameters
+                   {
+                       ValidateIssuer = true,
+                       ValidateAudience = true,
+                       ValidateLifetime = true,
+                       ValidateIssuerSigningKey = true,
+                       ValidIssuer = Configuration["JwtAuth:Issuer"],
+                       ValidAudience = Configuration["JwtAuth:Issuer"],
+                       IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["JwtAuth:Key"]))
+                   };
            });
         }
 
@@ -86,7 +85,7 @@ namespace JWTAuthDemo
                 
                 app.UseDeveloperExceptionPage();
                 app.UseSwagger();
-                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "JWTAuthDemo v1"));
+                app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "LogDealer v1"));
             }
 
             app.UseRouting();

@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace JWTAuthDemo.Models
+namespace Api.LogDealer.Models
 {
     public class LoginModel
     {
