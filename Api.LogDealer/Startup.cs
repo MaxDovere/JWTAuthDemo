@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Net.Http.Headers;
 using Microsoft.OpenApi.Models;
 using System.Text;
 
@@ -19,13 +20,24 @@ namespace Api.LogDealer
         {
             Configuration = configuration;
         }
-
+        private readonly string CORS_POLICY = "PolicyApiLogger";
         public IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            
+            services.AddCors(options =>
+            {
+                options.AddPolicy(
+                    name: CORS_POLICY,
+                    builder =>
+                    {
+                        builder.WithOrigins("https://localhost:44358") 
+                            .AllowAnyMethod()
+                            .AllowAnyHeader()
+                            .AllowCredentials();
+                    });
+            });
             services.AddSingleton<IJWTAuthManager, JWTAuthManager>();
 
             services.AddTransient<ILogService, LogService>();
@@ -89,12 +101,23 @@ namespace Api.LogDealer
             }
 
             app.UseRouting();
+            app.UseCors(CORS_POLICY);
+            app.Use(async (httpContext, next) =>
+            {
+                var apiMode = httpContext.Request.Path.StartsWithSegments("/api");
+                if (apiMode)
+                {
+                    httpContext.Request.Headers[HeaderNames.XRequestedWith] = "XMLHttpRequest";
+                }
+                await next();
+            });
             app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapControllers();
+                endpoints.MapControllers()
+                    .RequireCors(CORS_POLICY);
             });
         }
     }
